@@ -1,0 +1,46 @@
+<?php
+
+/** --------------------------------------------------------------------------------
+ * This repository class communicates with an API endpoint that does the following
+ *  - Check if a custom domain's DNS (A record) is pointing to the server
+ *  - Create a custom Vhost config file
+ *  - Check if SSL is valid
+ *  - Issue new SSL for custom domain
+ *
+ * @package    Grow CRM
+ * @author     NextLoop
+ *----------------------------------------------------------------------------------*/
+
+namespace App\Repositories\DomainSetup;
+
+use App\Models\Landlord\Foo;
+
+class CustomRepository {
+
+    /**
+     * The leads repository instance.
+     */
+    protected $setting;
+
+    /**
+     * Inject dependecies
+     */
+    public function __construct(Foo $foo) {
+
+        //get landlord settings
+        $settings = \App\Models\Landlord\Settings::On('landlord')->Where('settings_id', 'default')->first();
+
+        $this->setting = $setting;
+    }
+
+    /**
+     * Test the connection to the custom API end point
+     *
+     * @return bool
+     */
+    public function testEndPoint() {
+
+        //do somethings
+    }
+
+}

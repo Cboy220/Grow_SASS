@@ -1,0 +1,11 @@
+NOTE March 2023
+-----------------------------------------------------------------------------------------------------------
+The files in this folder are what are used by the .bat file when preparing the release package
+They are named the same as what will be in the database file
+
+This will replace all files in this folder
+- \storage\logos\app
+
+After the process has completed, this folder will be deleted
+
+-------------------------------------------------------------------------------------------------------------

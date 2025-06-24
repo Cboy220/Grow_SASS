@@ -1,0 +1,55 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # option to force redirect to ssl (https) - uncomment the two lines below
+    # RewriteCond %{HTTPS} !=on    
+    # RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+    
+    
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+    
+    # ---------------------------------------------------------------------------------------
+    # MODULES - 4 Feb 2025
+    # rewrite the resources lower case URL to match the server directory case
+    #           https://domain.com/application/modules/foobar/resources
+    #           https://domain.com/application/Modules/Foobar/Resources
+    # ---------------------------------------------------------------------------------------
+    RewriteCond %{REQUEST_URI} ^/application/modules/ [NC]
+    RewriteRule ^application/modules/(.*)$ /application/Modules/$1 [R=301,L]
+
+    RewriteCond %{REQUEST_URI} ^/application/Modules/services/ [NC]
+    RewriteRule ^application/Modules/services/(.*)$ /application/Modules/Services/$1 [R=301,L]
+
+    RewriteCond %{REQUEST_URI} ^/application/Modules/Services/resources/ [NC]
+    RewriteRule ^application/Modules/Services/resources/(.*)$ /application/Modules/Services/Resources/$1 [R=301,L]
+
+    
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Handle Front Controller...
+    RewriteCond %{REQUEST_URI} !(\.css|\.js|\.svg|\.png|\.jpg|\.gif|robots\.txt|\.png|\.ttf|\.woff)$ [NC]
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# ---------------------------------------------------------------------------------------
+# Litespeed Server - 20 Jan 2025
+#  Disable POST request filtering that is causing 403 permission denied errors 
+#  when submutting forms on Litespeed servers
+# ---------------------------------------------------------------------------------------
+<IfModule Litespeed>
+    <IfModule mod_security.c>
+        SecRuleEngine Off
+    </IfModule>
+</IfModule>

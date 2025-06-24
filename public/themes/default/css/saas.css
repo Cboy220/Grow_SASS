@@ -1,0 +1,179 @@
+/* -------------------------------------------------------------------------------------
+ * CSS FOR SAAS LANDLORD BACKEND DASHBORD
+ * @copyright Nextloop
+ * -----------------------------------------------------------------------------------*/
+/*Theme Colors*/
+/*bootstrap Color*/
+/*Light colors*/
+/*Normal Color*/
+/*Extra Variable*/
+/*modals*/
+/* ---------------------------------------------
+* Main Theme Colors
+*-----------------------------------------------*/
+/* ---------------------------------------------
+* more
+*-----------------------------------------------*/
+.modal-body .form-heading {
+  font-size: 16px; }
+  .modal-body .form-heading span {
+    border-bottom: 1 px solid #20aee3;
+    font-weight: 500;
+    display: inline-block;
+    color: #20aee3;
+    font-size: 15px; }
+.modal-body .modal-selector-contrast {
+  background-color: #ebf2f5; }
+
+/* ----------------------------------------------------------
+ * CLIENT SELECTOR & MODAL SELECTOR
+ * --------------------------------------------------------*/
+.modal-selector {
+  background-color: #ebf2f5;
+  padding: 25px 30px 10px 30px;
+  margin-bottom: 22px;
+  margin-left: -30px;
+  margin-right: -30px;
+  margin-top: -20px; }
+  .modal-selector .client-selector-links,
+  .modal-selector .modal-selector-links {
+    text-align: right;
+    font-size: 13px;
+    margin-top: -9px;
+    padding-bottom: 5px; }
+    .modal-selector .client-selector-links a,
+    .modal-selector .modal-selector-links a {
+      color: #67757c; }
+    .modal-selector .client-selector-links .active,
+    .modal-selector .modal-selector-links .active {
+      font-weight: 500;
+      /* text-decoration: underline; */
+      display: inline-block;
+      background-color: #9da6af;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 10px; }
+  .modal-selector .select2-container--bootstrap.select2-container--disabled .select2-selection {
+    border-color: #cad2da !important;
+    background-color: #e1e6ec; }
+  .modal-selector .form-control.error {
+    border-color: #ff5c6c !important; }
+  .modal-selector input:-internal-autofill-selected {
+    background-color: #ffffff !important;
+    color: #67757c !important; }
+
+/* ----------------------------------------------------------
+ * PACKAGES TABLES
+ * --------------------------------------------------------*/
+.package-pricing-box {
+  padding: 20px;
+  border: solid 1px #eeeff0;
+  background-color: #ffffff;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center; }
+  .package-pricing-box .pricing-header {
+    padding-bottom: 20px; }
+    .package-pricing-box .pricing-header .x-heading {
+      font-size: 20px;
+      padding-bottom: 10px; }
+    .package-pricing-box .pricing-header .x-price-month {
+      font-size: 26px;
+      font-weight: 500;
+      padding-bottom: 3px;
+      text-transform: uppercase; }
+      .package-pricing-box .pricing-header .x-price-month span {
+        font-size: 10px; }
+    .package-pricing-box .pricing-header .x-price-cycle {
+      font-size: 13px; }
+  .package-pricing-box .price-table-content .price-row {
+    border-top: solid 1px #eeeff0;
+    padding-top: 10px;
+    padding-bottom: 10px; }
+
+.dynamic-content-container {
+  min-height: 650px; }
+
+.saas-home .top-stats-panels .x-icon {
+  font-size: 20px;
+  padding-top: 4px; }
+
+.subscription-details .x-heading {
+  font-size: 17px;
+  padding: 10px 11px;
+  background-color: #f6f9fa;
+  font-weight: 500;
+  margin-bottom: 10px; }
+.subscription-details .x-image {
+  max-width: 250px;
+  height: auto; }
+.subscription-details .x-message {
+  padding-top: 20px; }
+
+.subscription-info-modal tr td {
+  font-size: 14px;
+  padding: 10px 5px;
+  background-color: transparent; }
+  .subscription-info-modal tr td.w-30 {
+    width: 40%; }
+
+.landlord-settings-start {
+  text-align: center;
+  padding-top: 20px; }
+  .landlord-settings-start img {
+    width: 250px;
+    height: auto; }
+  .landlord-settings-start h4 {
+    padding-top: 15px; }
+
+.section-element-box {
+  border: solid 1px #e8f0fe;
+  background-color: #ffffff;
+  padding: 10px;
+  margin-bottom: 20px; }
+  .section-element-box .x-image {
+    float: left;
+    margin-right: 10px; }
+    .section-element-box .x-image img {
+      width: 80px;
+      height: auto; }
+  .section-element-box .x-title {
+    width: 100%; }
+
+.splah-item-editing {
+  border: solid 1px #e8e8e9;
+  text-align: center;
+  padding: 40px;
+  margin-bottom: 30px; }
+  .splah-item-editing img {
+    width: 100%;
+    height: auto; }
+
+.input-group-both span:last-child {
+  visibility: visible;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-right: solid 1px #ced4da;
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px; }
+
+.group-menu-wrapper ul {
+  padding-left: 30px !important;
+  background-color: #f2f5f7; }
+  .group-menu-wrapper ul li a:hover {
+    background-color: transparent !important;
+    font-weight: 500; }
+.group-menu-wrapper.active ul {
+  display: block; }
+  .group-menu-wrapper.active ul li a.active {
+    background-color: transparent;
+    font-weight: 500; }
+
+.error-404 {
+  text-align: centre; }
+  .error-404 img {
+    width: 300px;
+    height: auto; }
+
+/*# sourceMappingURL=saas.css.map */

@@ -1,0 +1,30 @@
+/*
+Product: Grow CRM
+Contact: support@growcrm.io
+Notes: For extra styling of the landlord dashboard. All other styling comes fto
+*/
+.email-blinking-icon-table {
+  top: -13px;
+  right: -13px;
+}
+
+.sidenav-menu-item .email-blinking-icon-table {
+  top: 10px;
+  right: -11px;
+}
+
+.modal-body .email-settings {
+  margin-top: -10px;
+}
+.modal-body .email-settings td {
+  font-size: 14px;
+  padding: 10px;
+}
+.modal-body .email-settings .alert {
+  margin-bottom: 30px;
+}
+.modal-body .email-settings .email_settings_pending_1 {
+  margin-bottom: 8px;
+  margin-top: 15px;
+}
+/*# sourceMappingURL=landlord.css.map */
