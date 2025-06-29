@@ -222,6 +222,75 @@ class ClientRepository {
                                       AND type = 'client')
                                       AS count_users");
 
+        // === Custom: Average Feedback ===
+        $clients->selectRaw('(
+            SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+            FROM feedback_details d
+            JOIN feedbacks f ON f.feedback_id = d.feedback_id
+            JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+            WHERE f.client_id = clients.client_id
+        ) AS average_feedback');
+
+        // === Custom: Expectation Fulfillment ===
+        $clients->selectRaw('(
+            SELECT 
+                CASE WHEN SUM(weight) > 0 
+                    THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                    ELSE 0
+                END
+            FROM client_expectations
+            WHERE client_id = clients.client_id
+        ) AS expectation_fulfillment');
+
+        // === Custom: Health Status ===
+        $clients->selectRaw('(
+            CASE 
+                WHEN 
+                    (
+                        SELECT 
+                            CASE WHEN SUM(weight) > 0 
+                                THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                ELSE 0
+                            END
+                        FROM client_expectations
+                        WHERE client_id = clients.client_id
+                    ) >= 70
+                    AND
+                    (
+                        SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                        FROM feedback_details d
+                        JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                        JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                        WHERE f.client_id = clients.client_id
+                    ) >= 7
+                THEN "green"
+                WHEN 
+                    (
+                        (
+                            SELECT 
+                                CASE WHEN SUM(weight) > 0 
+                                    THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                    ELSE 0
+                                END
+                            FROM client_expectations
+                            WHERE client_id = clients.client_id
+                        ) BETWEEN 40 AND 69
+                    )
+                    OR
+                    (
+                        (
+                            SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                            FROM feedback_details d
+                            JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                            JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                            WHERE f.client_id = clients.client_id
+                        ) BETWEEN 5 AND 6
+                    )
+                THEN "yellow"
+                ELSE "red"
+            END
+        ) AS health_status');
+
         //join: primary contact
         $clients->leftJoin('users', function ($join) {
             $join->on('users.clientid', '=', 'clients.client_id');
@@ -290,6 +359,112 @@ class ClientRepository {
             });
         }
 
+        // === Custom: Filter by health status ===
+        if (is_array(request('filter_health_status')) && !empty(array_filter(request('filter_health_status')))) {
+            $healthStatuses = request('filter_health_status');
+            $clients->where(function ($query) use ($healthStatuses) {
+                foreach ($healthStatuses as $status) {
+                    if (in_array($status, ['green', 'yellow', 'red'])) {
+                        $query->orWhereRaw('(
+                            CASE 
+                                WHEN 
+                                    (
+                                        SELECT 
+                                            CASE WHEN SUM(weight) > 0 
+                                                THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                                ELSE 0
+                                            END
+                                        FROM client_expectations
+                                        WHERE client_id = clients.client_id
+                                    ) >= 70
+                                    AND
+                                    (
+                                        SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                                        FROM feedback_details d
+                                        JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                                        JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                                        WHERE f.client_id = clients.client_id
+                                    ) >= 7
+                                THEN "green"
+                                WHEN 
+                                    (
+                                        (
+                                            SELECT 
+                                                CASE WHEN SUM(weight) > 0 
+                                                    THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                                    ELSE 0
+                                                END
+                                            FROM client_expectations
+                                            WHERE client_id = clients.client_id
+                                        ) BETWEEN 40 AND 69
+                                    )
+                                    OR
+                                    (
+                                        (
+                                            SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                                            FROM feedback_details d
+                                            JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                                            JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                                            WHERE f.client_id = clients.client_id
+                                        ) BETWEEN 5 AND 6
+                                    )
+                                THEN "yellow"
+                                ELSE "red"
+                            END
+                        ) = ?', [$status]);
+                    }
+                }
+            });
+        }
+
+        // === Custom: Filter by average feedback range ===
+        if (request()->filled('filter_average_feedback_min') || request()->filled('filter_average_feedback_max')) {
+            if (request()->filled('filter_average_feedback_min')) {
+                $clients->whereRaw('(
+                    SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                    FROM feedback_details d
+                    JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                    JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                    WHERE f.client_id = clients.client_id
+                ) >= ?', [request('filter_average_feedback_min')]);
+            }
+            if (request()->filled('filter_average_feedback_max')) {
+                $clients->whereRaw('(
+                    SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                    FROM feedback_details d
+                    JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                    JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                    WHERE f.client_id = clients.client_id
+                ) <= ?', [request('filter_average_feedback_max')]);
+            }
+        }
+
+        // === Custom: Filter by expectation fulfillment range ===
+        if (request()->filled('filter_expectation_fulfillment_min') || request()->filled('filter_expectation_fulfillment_max')) {
+            if (request()->filled('filter_expectation_fulfillment_min')) {
+                $clients->whereRaw('(
+                    SELECT 
+                        CASE WHEN SUM(weight) > 0 
+                            THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                            ELSE 0
+                        END
+                    FROM client_expectations
+                    WHERE client_id = clients.client_id
+                ) >= ?', [request('filter_expectation_fulfillment_min')]);
+            }
+            if (request()->filled('filter_expectation_fulfillment_max')) {
+                $clients->whereRaw('(
+                    SELECT 
+                        CASE WHEN SUM(weight) > 0 
+                            THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                            ELSE 0
+                        END
+                    FROM client_expectations
+                    WHERE client_id = clients.client_id
+                ) <= ?', [request('filter_expectation_fulfillment_max')]);
+            }
+        }
+
         //custom fields filtering
         if (request('action') == 'search') {
             if ($fields = \App\Models\CustomField::Where('customfields_type', 'clients')->Where('customfields_show_filter_panel', 'yes')->get()) {
@@ -329,6 +504,135 @@ class ClientRepository {
                 $query->orWhereHas('category', function ($query) {
                     $query->where('category_name', 'LIKE', '%' . request('search_query') . '%');
                 });
+                
+                // === Custom: Search by health status ===
+                $searchQuery = request('search_query');
+                if (in_array(strtolower($searchQuery), ['green', 'yellow', 'red'])) {
+                    $query->orWhereRaw('(
+                        CASE 
+                            WHEN 
+                                (
+                                    SELECT 
+                                        CASE WHEN SUM(weight) > 0 
+                                            THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                            ELSE 0
+                                        END
+                                    FROM client_expectations
+                                    WHERE client_id = clients.client_id
+                                ) >= 70
+                                AND
+                                (
+                                    SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                                    FROM feedback_details d
+                                    JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                                    JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                                    WHERE f.client_id = clients.client_id
+                                ) >= 7
+                            THEN "green"
+                            WHEN 
+                                (
+                                    (
+                                        SELECT 
+                                            CASE WHEN SUM(weight) > 0 
+                                                THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                                ELSE 0
+                                            END
+                                        FROM client_expectations
+                                        WHERE client_id = clients.client_id
+                                    ) BETWEEN 40 AND 69
+                                )
+                                OR
+                                (
+                                    (
+                                        SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                                        FROM feedback_details d
+                                        JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                                        JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                                        WHERE f.client_id = clients.client_id
+                                    ) BETWEEN 5 AND 6
+                                )
+                            THEN "yellow"
+                            ELSE "red"
+                        END
+                    ) = ?', [strtolower($searchQuery)]);
+                }
+                
+                // === Custom: Search by average feedback (numeric search) ===
+                if (is_numeric($searchQuery)) {
+                    $query->orWhereRaw('(
+                        SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                        FROM feedback_details d
+                        JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                        JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                        WHERE f.client_id = clients.client_id
+                    ) = ?', [$searchQuery]);
+                    
+                    // Also search for expectation fulfillment percentage
+                    $query->orWhereRaw('(
+                        SELECT 
+                            CASE WHEN SUM(weight) > 0 
+                                THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                ELSE 0
+                            END
+                        FROM client_expectations
+                        WHERE client_id = clients.client_id
+                    ) = ?', [$searchQuery]);
+                }
+                
+                // === Custom: Search by range queries for numeric fields ===
+                $searchQuery = request('search_query');
+                
+                // Handle range queries like "5-10", ">7", "<80", ">=5", etc.
+                if (preg_match('/^(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)$/', $searchQuery, $matches)) {
+                    // Range format: "5-10"
+                    $min = $matches[1];
+                    $max = $matches[2];
+                    
+                    // Search average feedback in range
+                    $query->orWhereRaw('(
+                        SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                        FROM feedback_details d
+                        JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                        JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                        WHERE f.client_id = clients.client_id
+                    ) BETWEEN ? AND ?', [$min, $max]);
+                    
+                    // Search expectation fulfillment in range
+                    $query->orWhereRaw('(
+                        SELECT 
+                            CASE WHEN SUM(weight) > 0 
+                                THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                ELSE 0
+                            END
+                        FROM client_expectations
+                        WHERE client_id = clients.client_id
+                    ) BETWEEN ? AND ?', [$min, $max]);
+                    
+                } elseif (preg_match('/^([><]=?)\s*(\d+(?:\.\d+)?)$/', $searchQuery, $matches)) {
+                    // Comparison format: ">7", "<80", ">=5", etc.
+                    $operator = $matches[1];
+                    $value = $matches[2];
+                    
+                    // Search average feedback with comparison
+                    $query->orWhereRaw('(
+                        SELECT ROUND(SUM(q.weight * d.value) * 10 / NULLIF(SUM(q.weight * q.range), 0), 2)
+                        FROM feedback_details d
+                        JOIN feedbacks f ON f.feedback_id = d.feedback_id
+                        JOIN feedback_queries q ON q.feedback_query_id = d.feedback_query_id
+                        WHERE f.client_id = clients.client_id
+                    ) ' . $operator . ' ?', [$value]);
+                    
+                    // Search expectation fulfillment with comparison
+                    $query->orWhereRaw('(
+                        SELECT 
+                            CASE WHEN SUM(weight) > 0 
+                                THEN ROUND(SUM(CASE WHEN status = "fulfilled" THEN weight ELSE 0 END) * 100 / SUM(weight), 0)
+                                ELSE 0
+                            END
+                        FROM client_expectations
+                        WHERE client_id = clients.client_id
+                    ) ' . $operator . ' ?', [$value]);
+                }
             });
 
         }
@@ -379,6 +683,9 @@ class ClientRepository {
                 'sum_contracts',
                 'sum_hours_worked',
                 'count_users',
+                'average_feedback',
+                'expectation_fulfillment',
+                'health_status',
             ];
             foreach ($list as $key) {
                 if (request('orderby') == $key) {
@@ -419,7 +726,9 @@ class ClientRepository {
         }
 
         // Get the results and return them.
-        return $clients->paginate(config('system.settings_system_pagination_limits'));
+        $results = $clients->paginate(config('system.settings_system_pagination_limits'));
+
+        return $results;
     }
 
     /**

@@ -54,7 +54,7 @@ return [
             'driver' => 'mysql',
             'host' => env_db_host(),
             'port' => env_db_port(),
-            'database' => 'crm_f67437_1750774147',
+            'database' => 'crm_p3b3y8_1751124177',
             'username' => env_db_user(),
             'password' => env_db_password(),
             'unix_socket' => '',

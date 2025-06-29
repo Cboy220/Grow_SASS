@@ -21,11 +21,20 @@ Route::get("/resetpassword", "Authenticate@resetPassword");
 Route::post("/resetpassword", "Authenticate@resetPasswordAction");
 Route::get("/access", "Authenticate@directLoginAccess"); //SAAS
 
+//POLLING
+Route::group(['prefix' => 'polling'], function () {
+    Route::get("/general", "Polling@generalPoll");
+    Route::post("/timers", "Polling@timersPoll");
+    Route::get("/timer", "Polling@activeTimerPoll");
+});
+
 //LOGOUT
 Route::any('logout', function () {
     Auth::logout();
     return redirect('/login');
 });
+
+
 
 //CLIENTS
 Route::group(['prefix' => 'clients'], function () {
@@ -1138,13 +1147,6 @@ Route::group(['prefix' => 'api'], function () {
     Route::any("/paypal/ipn", "API\Paypal\Ipn@index");
     Route::any("/mollie/webhooks", "API\Mollie\Webhooks@index");
     Route::any("/paystack/webhooks", "API\Paystack\Webhooks@index");
-});
-
-//POLLING
-Route::group(['prefix' => 'polling'], function () {
-    Route::get("/general", "Polling@generalPoll");
-    Route::post("/timers", "Polling@timersPoll");
-    Route::get("/timer", "Polling@activeTimerPoll");
 });
 
 //SETUP GROUP (with group route name 'setup'
