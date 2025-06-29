@@ -293,6 +293,36 @@
                         <span class="custom-control-description">@lang('lang.users')</span>
                     </label>
                 </div>
+                <!--tableconfig_column_26 [count_expectativas]-->
+                <div class="p-b-5">
+                    <label class="custom-control custom-checkbox table-config-checkbox-container">
+                        <input name="tableconfig_column_26" type="checkbox"
+                            class="custom-control-input table-config-checkbox cursor-pointer"
+                            {{ runtimePrechecked(config('table.tableconfig_column_26')) }}>
+                        <span class="custom-control-indicator"></span>
+                        <span class="custom-control-description">@lang('lang.expectativas')</span>
+                    </label>
+                </div>
+                <!--tableconfig_column_27 [feedback]-->
+                <div class="p-b-5">
+                    <label class="custom-control custom-checkbox table-config-checkbox-container">
+                        <input name="tableconfig_column_27" type="checkbox"
+                            class="custom-control-input table-config-checkbox cursor-pointer"
+                            {{ runtimePrechecked(config('table.tableconfig_column_27')) }}>
+                        <span class="custom-control-indicator"></span>
+                        <span class="custom-control-description">@lang('lang.feedback')</span>
+                    </label>
+                </div>
+                <!--tableconfig_column_28 [count_health]-->
+                <div class="p-b-5">
+                    <label class="custom-control custom-checkbox table-config-checkbox-container">
+                        <input name="tableconfig_column_28" type="checkbox"
+                            class="custom-control-input table-config-checkbox cursor-pointer"
+                            {{ runtimePrechecked(config('table.tableconfig_column_28')) }}>
+                        <span class="custom-control-indicator"></span>
+                        <span class="custom-control-description">@lang('lang.health')</span>
+                    </label>
+                </div>
 
                 <!--tableconfig_column_23 [tags]-->
                 <div class="p-b-5">

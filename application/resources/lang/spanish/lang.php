@@ -2848,5 +2848,14 @@ return [
     'ask' => 'Preguntar',
     'raw_client_data_snapshot' => 'Instantánea de Datos Crudos del Cliente',
     'thinking' => 'Pensando...',
-    'error_reaching_ai' => 'Error al contactar con la IA.'
+    'error_reaching_ai' => 'Error al contactar con la IA.',
+    'health' => 'salud',
+    
+    //--------------New Filter Fields-------------------
+    'expectation_fulfillment' => 'Cumplimiento de Expectativas',
+    'green' => 'Verde',
+    'yellow' => 'Amarillo',
+    'red' => 'Rojo',
+    'min' => 'Mín',
+    'max' => 'Máx',
 ];

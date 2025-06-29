@@ -121,6 +121,75 @@
                     </div>
                 </div>
                 <!--status -->
+
+                <!--health status-->
+                <div class="filter-block">
+                    <div class="title">
+                        {{ cleanLang(__('lang.health_status')) }}
+                    </div>
+                    <div class="fields">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <select name="filter_health_status[]" id="filter_health_status"
+                                    class="form-control form-control-sm select2-basic select2-multiple"
+                                    multiple="multiple" tabindex="-1" aria-hidden="true">
+                                    <option value="green">{{ cleanLang(__('lang.green')) }}</option>
+                                    <option value="yellow">{{ cleanLang(__('lang.yellow')) }}</option>
+                                    <option value="red">{{ cleanLang(__('lang.red')) }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--health status-->
+
+                <!--average feedback-->
+                <div class="filter-block">
+                    <div class="title">
+                        {{ cleanLang(__('lang.average_feedback')) }}
+                    </div>
+                    <div class="fields">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="number" name="filter_average_feedback_min" 
+                                    class="form-control form-control-sm" 
+                                    placeholder="{{ cleanLang(__('lang.min')) }}" 
+                                    min="0" max="10" step="0.1">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="number" name="filter_average_feedback_max" 
+                                    class="form-control form-control-sm" 
+                                    placeholder="{{ cleanLang(__('lang.max')) }}" 
+                                    min="0" max="10" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--average feedback-->
+
+                <!--expectation fulfillment-->
+                <div class="filter-block">
+                    <div class="title">
+                        {{ cleanLang(__('lang.expectation_fulfillment')) }}
+                    </div>
+                    <div class="fields">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="number" name="filter_expectation_fulfillment_min" 
+                                    class="form-control form-control-sm" 
+                                    placeholder="{{ cleanLang(__('lang.min')) }}" 
+                                    min="0" max="100" step="1">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="number" name="filter_expectation_fulfillment_max" 
+                                    class="form-control form-control-sm" 
+                                    placeholder="{{ cleanLang(__('lang.max')) }}" 
+                                    min="0" max="100" step="1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--expectation fulfillment-->
                     
                 <!--custom fields-->
                 @include('misc.customfields-filters')
