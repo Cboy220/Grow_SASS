@@ -59,6 +59,20 @@ Route::group(['prefix' => 'clients'], function () {
     //dynamic load
     Route::any("/{client}/{section}", "Clients@showDynamic")
         ->where(['client' => '[0-9]+', 'section' => 'details|contacts|projects|files|client-files|tickets|invoices|expenses|payments|timesheets|estimates|notes|expectativas|feedback|clientai|project-files|client-files']);
+
+    Route::get('/{clientId}/ai-feedback-analysis', [App\Http\Controllers\Clients::class, 'analyzeAIFeedbackOnly'])->name('clients.ai.feedback.analysis');
+    Route::get('/clients/{client}/analyze-ai/feedback-modal', 'Clients@analyzeAIFeedbackModal')->where('client', '[0-9]+')->name('clients.analyze.ai.feedback.modal');
+    Route::get('/{client}/analyze-ai', 'Clients@analyzeAIModal')->where('client', '[0-9]+')->name('clients.analyze.ai');
+    Route::get('/{client}/analyze-ai/feedback', 'Clients@analyzeAIFeedback')->where('client', '[0-9]+')->name('clients.analyze.ai.feedback');
+    Route::get('/{client}/analyze-ai/expectations', 'Clients@analyzeAIExpectations')->where('client', '[0-9]+')->name('clients.analyze.ai.expectations');
+    Route::get('/{client}/analyze-ai/projects', 'Clients@analyzeAIProjects')->where('client', '[0-9]+')->name('clients.analyze.ai.projects');
+    Route::get('/{client}/analyze-ai/comments', 'Clients@analyzeAIComments')->where('client', '[0-9]+')->name('clients.analyze.ai.comments');
+    
+    // New AI Analysis Routes
+    Route::post('/{client}/generate-ai-feedback-analysis', 'Clients@generateAIFeedbackAnalysis')->where('client', '[0-9]+')->name('clients.generate.ai.feedback');
+    Route::post('/{client}/generate-ai-expectations-analysis', 'Clients@generateAIExpectationsAnalysis')->where('client', '[0-9]+')->name('clients.generate.ai.expectations');
+    Route::post('/{client}/generate-ai-projects-analysis', 'Clients@generateAIProjectsAnalysis')->where('client', '[0-9]+')->name('clients.generate.ai.projects');
+    Route::post('/{client}/generate-ai-comments-analysis', 'Clients@generateAICommentsAnalysis')->where('client', '[0-9]+')->name('clients.generate.ai.comments');
 });
 Route::any("/client/{x}/profile", "Clients@profile")->where('x', '[0-9]+');
 Route::resource('clients', 'Clients');
@@ -297,6 +311,16 @@ Route::group(['prefix' => 'projects'], function () {
     Route::get("/bulk-change-progress", "Projects@bulkChangeProgress");
     Route::post("/bulk-change-progress", "Projects@bulkChangeProgressUpdate");
     Route::post("/bulk/stop-timers", "Projects@bulkStopTimers");
+
+    Route::get("/{project}/analyze_ai", "Projects@analyzeAI")->where('project', '[0-9]+');
+    Route::get("/{project}/analyze-ai/tasks", "Projects@analyzeAITasks")->where('project', '[0-9]+');
+    Route::get("/{project}/analyze-ai/team", "Projects@analyzeAITeam")->where('project', '[0-9]+');
+    Route::get("/{project}/analyze-ai/billing", "Projects@analyzeAIBilling")->where('project', '[0-9]+');
+
+    // New Project AI Analysis Routes
+    Route::post("/{project}/generate-ai-tasks-analysis", "Projects@generateAITasksAnalysis")->where('project', '[0-9]+')->name('projects.generate.ai.tasks');
+    Route::post("/{project}/generate-ai-team-analysis", "Projects@generateAITeamAnalysis")->where('project', '[0-9]+')->name('projects.generate.ai.team');
+    Route::post("/{project}/generate-ai-billing-analysis", "Projects@generateAIBillingAnalysis")->where('project', '[0-9]+')->name('projects.generate.ai.billing');
 
     //dynamic load
     Route::any("/{project}/{section}", "Projects@showDynamic")
@@ -1364,3 +1388,22 @@ Route::group(["prefix" => "clientai"], function () {
     Route::get("/analyze/{clientId}", "ClientAIAnalysis@analyze")->where('clientId', '[0-9]+')->name('clientai.analyze');
     Route::post("/ask/{clientId}", "ClientAIAnalysis@ask")->where('clientId', '[0-9]+')->name('clientai.ask');
 });
+
+Route::get('/team/analyze-ai/weekly-report', 'Team@analyzeAIWeeklyReport')->name('team.analyze.ai.weekly_report');
+Route::get('/team/analyze-ai/modal', 'Team@analyzeAIModal')->name('team.analyze.ai.modal');
+Route::get('/team/analyze-ai/general-alerts', 'Team@analyzeAIGeneralAlerts')->name('team.analyze.ai.general_alerts');
+// TEAM AI BASE DATA (non-AI)
+Route::get('/team/analyze-ai/base/weekly-report', 'Team@baseWeeklyReport')->name('team.analyze.ai.base.weekly_report');
+Route::get('/team/analyze-ai/base/general-alerts', 'Team@baseGeneralAlerts')->name('team.analyze.ai.base.general_alerts');
+// TEAM AI ANALYSIS (OpenAI)
+Route::get('/team/analyze-ai/ai/weekly-report', 'Team@aiWeeklyReport')->name('team.analyze.ai.ai.weekly_report');
+Route::get('/team/analyze-ai/ai/general-alerts', 'Team@aiGeneralAlerts')->name('team.analyze.ai.ai.general_alerts');
+Route::get('/team/analyze-ai/base/productivity', 'Team@baseProductivity')->name('team.analyze.ai.base.productivity');
+Route::get('/team/analyze-ai/ai/productivity', 'Team@aiProductivity')->name('team.analyze.ai.ai.productivity');
+
+// Leads AI Analysis Modal & Tabs
+Route::get('/leads/analyze-ai/modal', 'Leads@analyzeAIModal')->name('leads.analyze.ai.modal');
+Route::get('/leads/analyze-ai/tab/analysis', 'Leads@analyzeAITabAnalysis')->name('leads.analyze.ai.tab.analysis');
+Route::get('/leads/analyze-ai/tab/scoring', 'Leads@analyzeAITabScoring')->name('leads.analyze.ai.tab.scoring');
+Route::get('/leads/analyze-ai/ai/analysis', 'Leads@analyzeAIAIAnalysis')->name('leads.analyze.ai.ai.analysis');
+Route::get('/leads/analyze-ai/ai/scoring', 'Leads@analyzeAIAIScoring')->name('leads.analyze.ai.ai.scoring');

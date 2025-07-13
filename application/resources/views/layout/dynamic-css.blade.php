@@ -295,4 +295,21 @@
     background-color: rgba(0, 0, 0, 0.2);
     border-radius: 3px;
   }
+
+  .analyze-ai-tab-card {
+      border-left: 5px solid #e74c3c;
+      border-radius: 10px;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .nav-tabs .nav-link.active {
+      border: none;
+      border-bottom: 2px solid #007bff;
+    }
+    .nav-tabs .nav-link {
+      border: none;
+      color: #333;
+      font-weight: 500;
+    }
 </style>

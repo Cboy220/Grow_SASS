@@ -25,6 +25,17 @@
                     </label>
                 </div>
 
+                <!--tableconfig_column_29 [AI Analysis Button]-->
+                <div class="p-b-5">
+                    <label class="custom-control custom-checkbox table-config-checkbox-container">
+                        <input name="tableconfig_column_29" type="checkbox"
+                            class="custom-control-input table-config-checkbox cursor-pointer"
+                            <?php echo e(runtimePrechecked(config('table.tableconfig_column_29'))); ?>>
+                        <span class="custom-control-indicator"></span>
+                        <span class="custom-control-description"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Analysis</span>
+                    </label>
+                </div>
+
                 <!--tableconfig_column_2 [client_company_name]-->
                 <div class="p-b-5">
                     <label class="custom-control custom-checkbox table-config-checkbox-container">
@@ -377,4 +388,7 @@
 </div>
 </form>
 </div>
-<!--sidebar--><?php /**PATH D:\Grow_SaaS\application\resources\views/pages/clients/components/misc/table-config.blade.php ENDPATH**/ ?>
+<!--sidebar-->
+
+
+<?php /**PATH D:\Grow_SaaS\application\resources\views/pages/clients/components/misc/table-config.blade.php ENDPATH**/ ?>

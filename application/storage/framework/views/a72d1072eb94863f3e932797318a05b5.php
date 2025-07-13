@@ -9,6 +9,20 @@
 
         </td>
 
+        <!--tableconfig_column_29 [AI Analysis Button]-->
+        <?php if(config('table.tableconfig_column_29')): ?>
+        <td class="clients_analyze_ai <?php echo e(config('table.tableconfig_column_29')); ?> tableconfig_column_29">
+            <button type="button"
+               class="ai-analysis-btn js-ajax-ux-request reset-target-modal-form btn btn-sm btn-link text-success p-0"
+               data-toggle="modal" data-target="#basicModal"
+               data-url="<?php echo e(route('clients.analyze.ai', $client->client_id)); ?>"
+               data-loading-target="basicModal"
+               data-placement="top" title="AI Client Analysis">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </button>
+        </td>
+        <?php endif; ?>
+
         <!--tableconfig_column_2 [client_company_name]-->
         <td class="clients_col_company <?php echo e(config('table.tableconfig_column_2')); ?> tableconfig_column_2"
             id="clients_col_id_<?php echo e($client->client_id); ?>">

@@ -154,6 +154,19 @@
         <div class="x-footer row">
             <div class="col-6 x-icons">
 
+                <!--AI Analysis-->
+                <button type="button"
+                    class="x-icon display-inline-block vm p-t-2 mr-1 data-toggle-action-tooltip font-14 js-ajax-ux-request"
+                    data-toggle="modal"
+                    data-target="#basicModal"
+                    data-url="{{ url('/leads/analyze-ai/modal?lead_id=' . $lead->lead_id) }}"
+                    data-ajax-type="GET"
+                    data-loading-target="basicModalContent"
+                    data-loading-class="loading"
+                    style="background:none; border:none; box-shadow:none; padding:0;">
+                    <i class="fas fa-robot text-info"></i>
+                </button>
+                <!--/AI Analysis-->
                 <!--pin-->
                 <span title="{{ cleanLang(__('lang.pinning')) }}" data-parent="lead_{{ $lead->lead_id }}"
                     data-url="{{ url('/leads/'.$lead->lead_id.'/pinning') }}"

@@ -434,11 +434,21 @@ class ClientAIRepository
         $prompt[] = "- Feedback Trend: {$feedbackSummary['trend']}";
         $prompt[] = "- Most Recent Feedback: " . ($lastFeedback ? "\"{$lastFeedback->comment}\"" : 'N/A');
 
-        $prompt[] = "\nDetailed Feedback Breakdown:";
+        $prompt[] = "\nDetailed Feedback Breakdown (last 10 entries):";
         foreach ($feedbackDetails->take(10) as $fd) {
             $userName = $fd->first_name ? "{$fd->first_name} {$fd->last_name}" : 'Anonymous';
             $prompt[] = "- Query: \"{$fd->query_title}\" - Score: {$fd->value}/{$fd->query_range} (Weight: {$fd->query_weight}) - User: {$userName} - Date: {$fd->feedback_date}";
         }
+
+        // --- New: Explicit AI instructions for perfect feedback analysis ---
+        $prompt[] = "\nPlease perform a detailed feedback analysis with the following points:";
+        $prompt[] = "1. Summarize the recency and frequency of feedback (e.g., how often feedback is received, any long gaps, last feedback date).";
+        $prompt[] = "2. Calculate and comment on the average feedback score and its trend (improving, declining, or stable).";
+        $prompt[] = "3. Identify the most common positive and negative themes or keywords from the feedback comments.";
+        $prompt[] = "4. Highlight any specific concerns or praise that appear multiple times.";
+        $prompt[] = "5. Provide actionable recommendations for the client relationship based on the feedback data.";
+        $prompt[] = "6. If there are any red flags or urgent issues, mention them clearly.";
+        $prompt[] = "7. Write your analysis in a clear, professional, and actionable style, suitable for a business manager.";
 
         $prompt[] = "\nClient Expectations (Total: {$expectations->count()}, Last: " . ($lastExpectation ? $lastExpectation->expectation_created . ", $daysSinceLastExpectation days ago" : 'N/A') . "):";
         $prompt[] = "- Fulfilled: {$expectationsSummary['fulfilled_count']} ({$expectationsSummary['fulfilled_percent']}%)";
@@ -503,6 +513,114 @@ class ClientAIRepository
         $prompt[] = "6. Opportunities for upselling or expanding services based on their needs.";
         $prompt[] = "7. Any red flags or areas requiring immediate attention.";
 
+        return implode("\n", $prompt);
+    }
+
+    /**
+     * Generate a detailed AI prompt for feedback analysis only
+     */
+    public function generateFeedbackAnalysisPrompt($clientId)
+    {
+        $now = Carbon::now();
+        $feedbacks = DB::table('feedbacks')
+            ->where('client_id', $clientId)
+            ->orderByDesc('feedback_created')
+            ->get();
+        $lastFeedback = $feedbacks->first();
+        $daysSinceLastFeedback = $lastFeedback ? Carbon::parse($lastFeedback->feedback_created)->diffInDays($now) : null;
+        $feedbackCount = $feedbacks->count();
+        $comments = $feedbacks->pluck('comment')->toArray();
+
+        $prompt = [];
+        $prompt[] = "You are an expert business analyst AI. Here is the feedback history for this client:";
+        foreach ($feedbacks as $fb) {
+            $prompt[] = "- Date: {$fb->feedback_created}, Comment: \"{$fb->comment}\"";
+        }
+        $prompt[] = "\nPlease analyze the following in a structured table format:";
+        $prompt[] = "| Goal                  | Description                                           |";
+        $prompt[] = "| --------------------- | ----------------------------------------------------- |";
+        $prompt[] = "| **Sentiment**         | Is it positive, neutral, or negative?                 |";
+        $prompt[] = "| **Topics/Keywords**   | What did they mention? (speed, quality, design, etc.) |";
+        $prompt[] = "| **Emotion tone**      | Are they enthusiastic, disappointed, neutral?         |";
+        $prompt[] = "| **Actionable points** | What should be improved or emphasized more?           |";
+        $prompt[] = "| **Client type**       | Friendly? Demanding? Corporate tone?                  |";
+        $prompt[] = "\nFor each goal, provide a detailed, actionable description based on the feedback above. Write your analysis in a clear, professional, and actionable style.";
+        return implode("\n", $prompt);
+    }
+
+    /**
+     * Generate a detailed AI prompt for expectations analysis only
+     */
+    public function generateExpectationsAnalysisPrompt($clientId)
+    {
+        $expectations = DB::table('client_expectations')
+            ->where('client_id', $clientId)
+            ->orderByDesc('expectation_created')
+            ->get();
+        $prompt = [];
+        $prompt[] = "You are an expert business analyst AI. Here is the expectations history for this client:";
+        foreach ($expectations->take(10) as $exp) {
+            $prompt[] = "- Title: {$exp->title}, Status: {$exp->status}, Due: {$exp->due_date}, Created: {$exp->expectation_created}";
+        }
+        $prompt[] = "\nPlease analyze the following:";
+        $prompt[] = "1. Progress on expectations (fulfilled, pending, overdue).";
+        $prompt[] = "2. Any patterns or delays in meeting expectations.";
+        $prompt[] = "3. Actionable recommendations for improving expectation management.";
+        $prompt[] = "4. Any red flags or urgent issues.";
+        $prompt[] = "Write your analysis in a clear, professional, and actionable style.";
+        return implode("\n", $prompt);
+    }
+
+    /**
+     * Generate a detailed AI prompt for projects analysis only
+     */
+    public function generateProjectsAnalysisPrompt($clientId)
+    {
+        $projects = DB::table('projects')
+            ->where('project_clientid', $clientId)
+            ->orderByDesc('project_created')
+            ->get();
+        $prompt = [];
+        $prompt[] = "You are an expert business analyst AI. Here is the project history for this client:";
+        foreach ($projects->take(10) as $p) {
+            $prompt[] = "- Title: {$p->project_title}, Status: {$p->project_status}, Created: {$p->project_created}, Due: {$p->project_date_due}";
+        }
+        $prompt[] = "\nPlease analyze the following:";
+        $prompt[] = "1. Overdue items or upcoming deadlines.";
+        $prompt[] = "2. Patterns in project completion or delays.";
+        $prompt[] = "3. Actionable recommendations for project management.";
+        $prompt[] = "4. Any red flags or urgent issues.";
+        $prompt[] = "Write your analysis in a clear, professional, and actionable style.";
+        return implode("\n", $prompt);
+    }
+
+    /**
+     * Generate a detailed AI prompt for comments analysis only
+     */
+    public function generateCommentsAnalysisPrompt($clientId)
+    {
+        $feedbacks = DB::table('feedbacks')
+            ->where('client_id', $clientId)
+            ->whereNotNull('comment')
+            ->orderByDesc('feedback_created')
+            ->get();
+        $unanswered = $feedbacks->filter(function($fb) {
+            $hasReply = DB::table('feedback_details')
+                ->where('feedback_id', $fb->feedback_id)
+                ->whereNotNull('value')
+                ->exists();
+            return !$hasReply;
+        });
+        $prompt = [];
+        $prompt[] = "You are an expert business analyst AI. Here are the client comments that may need attention:";
+        foreach ($unanswered->take(10) as $fb) {
+            $prompt[] = "- Date: {$fb->feedback_created}, Comment: \"{$fb->comment}\"";
+        }
+        $prompt[] = "\nPlease analyze the following:";
+        $prompt[] = "1. Identify any comments that have not been answered.";
+        $prompt[] = "2. Suggest how to address these comments and improve communication.";
+        $prompt[] = "3. Any red flags or urgent issues.";
+        $prompt[] = "Write your analysis in a clear, professional, and actionable style.";
         return implode("\n", $prompt);
     }
 
@@ -586,5 +704,112 @@ class ClientAIRepository
             'pending_count' => $pending,
             'overdue_count' => $overdue
         ];
+    }
+
+    /**
+     * Check if client has received feedback in the last $months months.
+     * Returns ['has_recent_feedback' => bool, 'last_feedback_date' => date|null, 'details' => array]
+     */
+    public function getRecentFeedbackStatus($clientId, $months = 3)
+    {
+        $since = Carbon::now()->subMonths($months);
+        $feedbacks = DB::table('feedbacks')
+            ->where('client_id', $clientId)
+            ->where('feedback_created', '>=', $since)
+            ->orderByDesc('feedback_created')
+            ->get();
+        return [
+            'has_recent_feedback' => $feedbacks->count() > 0,
+            'last_feedback_date' => $feedbacks->first()->feedback_created ?? null,
+            'details' => $feedbacks
+        ];
+    }
+
+    /**
+     * Check if client has made progress on any expectations in the last $months months.
+     * Returns ['has_recent_progress' => bool, 'recent_expectations' => array, 'details' => array]
+     */
+    public function getRecentExpectationProgress($clientId, $months = 3)
+    {
+        $since = Carbon::now()->subMonths($months);
+        $expectations = DB::table('client_expectations')
+            ->where('client_id', $clientId)
+            ->where('expectation_updated', '>=', $since)
+            ->orderByDesc('expectation_updated')
+            ->get();
+        return [
+            'has_recent_progress' => $expectations->count() > 0,
+            'recent_expectations' => $expectations,
+            'details' => $expectations
+        ];
+    }
+
+    /**
+     * Get projects with overdue items or deadlines within $daysUpcoming days.
+     * Returns ['overdue' => array, 'upcoming' => array]
+     */
+    public function getProjectOverdueOrUpcoming($clientId, $daysUpcoming = 14)
+    {
+        $now = Carbon::now();
+        $upcoming = $now->copy()->addDays($daysUpcoming);
+        $projects = DB::table('projects')
+            ->where('project_clientid', $clientId)
+            ->select('project_id', 'project_title', 'project_status', 'project_date_due')
+            ->get();
+        $overdue = $projects->filter(function($p) use ($now) {
+            return $p->project_date_due && Carbon::parse($p->project_date_due)->lt($now) && $p->project_status != 'completed';
+        })->values();
+        $upcomingList = $projects->filter(function($p) use ($now, $upcoming) {
+            return $p->project_date_due && Carbon::parse($p->project_date_due)->gte($now) && Carbon::parse($p->project_date_due)->lte($upcoming) && $p->project_status != 'completed';
+        })->values();
+        return [
+            'overdue' => $overdue,
+            'upcoming' => $upcomingList
+        ];
+    }
+
+    /**
+     * Get client feedback comments that have not received a reply (unanswered).
+     * Returns array of feedbacks with comments and no reply.
+     */
+    public function getUnansweredClientComments($clientId)
+    {
+        // Feedbacks with a comment
+        $feedbacks = DB::table('feedbacks')
+            ->where('client_id', $clientId)
+            ->whereNotNull('comment')
+            ->orderByDesc('feedback_created')
+            ->get();
+        // For each feedback, check if there is a reply in feedback_details or another table (customize as needed)
+        $unanswered = $feedbacks->filter(function($fb) {
+            // If there is no feedback_detail with a non-null value or reply, consider it unanswered
+            $hasReply = DB::table('feedback_details')
+                ->where('feedback_id', $fb->feedback_id)
+                ->whereNotNull('value')
+                ->exists();
+            return !$hasReply;
+        })->values();
+        return $unanswered;
+    }
+
+    /**
+     * Get latest feedbacks with marks for a client
+     */
+    public function getLatestFeedbackWithMarks($clientId, $limit = 3)
+    {
+        $query = DB::table('feedbacks as f')
+            ->join('feedback_details as d', 'f.feedback_id', '=', 'd.feedback_id')
+            ->join('feedback_queries as q', 'd.feedback_query_id', '=', 'q.feedback_query_id')
+            ->select(
+                'f.feedback_id',
+                'f.feedback_created',
+                'f.comment',
+                DB::raw('ROUND(SUM(q.weight * d.value) * 10 / SUM(q.weight * q.range), 2) as total_marks')
+            )
+            ->where('f.client_id', $clientId)
+            ->groupBy('f.feedback_id', 'f.feedback_created', 'f.comment')
+            ->orderBy('f.feedback_created', 'desc')
+            ->limit($limit);
+        return $query->get();
     }
 }

@@ -884,4 +884,70 @@ class UserRepository {
         $query->update(['account_owner' => 'yes']);
     }
 
+    /**
+     * Generate AI prompt for team weekly report and general alerts
+     * @return string
+     */
+    public function generateTeamWeeklyReportPrompt()
+    {
+        $teamMembers = $this->getTeamMembers('collection');
+        $now = now();
+        $oneWeekAgo = $now->copy()->subWeek();
+        $prompt = "# Team Members Weekly Report\n\n";
+        $noTasksInProgress = [];
+        $bottlenecks = [];
+        foreach ($teamMembers as $member) {
+            $completedTasks = $member->assignedTasks()
+                ->where('task_status', 'completed')
+                ->where('task_updated', '>=', $oneWeekAgo)
+                ->get();
+            $inProgressTasks = $member->assignedTasks()
+                ->where('task_status', 'in_progress')
+                ->where('task_updated', '>=', $oneWeekAgo)
+                ->get();
+            $overdueTasks = $member->assignedTasks()
+                ->where('task_date_due', '<', $now)
+                ->where('task_status', '!=', 'completed')
+                ->get();
+            $prompt .= "## {$member->full_name}\n";
+            $prompt .= "- **Completed Tasks (last week):**\n";
+            if ($completedTasks->count()) {
+                foreach ($completedTasks as $task) {
+                    $prompt .= "  - {$task->task_title} ({$task->task_updated})\n";
+                }
+            } else {
+                $prompt .= "  - None\n";
+            }
+            $prompt .= "- **In Progress Tasks (last week):**\n";
+            if ($inProgressTasks->count()) {
+                foreach ($inProgressTasks as $task) {
+                    $prompt .= "  - {$task->task_title} (Due: {$task->task_date_due})\n";
+                }
+            } else {
+                $prompt .= "  - None\n";
+            }
+            $prompt .= "- **Overdue Tasks:**\n";
+            if ($overdueTasks->count()) {
+                foreach ($overdueTasks as $task) {
+                    $prompt .= "  - {$task->task_title} (Due: {$task->task_date_due})\n";
+                }
+            } else {
+                $prompt .= "  - None\n";
+            }
+            $prompt .= "\n";
+            // General alerts
+            if ($inProgressTasks->count() == 0) {
+                $noTasksInProgress[] = $member->full_name;
+            }
+            $bottleneckCount = $overdueTasks->count() + $inProgressTasks->count();
+            if ($bottleneckCount > 5) { // threshold for bottleneck
+                $bottlenecks[] = $member->full_name . " ({$bottleneckCount} tasks)";
+            }
+        }
+        $prompt .= "## General Alerts\n";
+        $prompt .= "- **No tasks in progress:** " . (count($noTasksInProgress) ? implode(', ', $noTasksInProgress) : 'None') . "\n";
+        $prompt .= "- **Bottlenecks:** " . (count($bottlenecks) ? implode(', ', $bottlenecks) : 'None') . "\n";
+        return $prompt;
+    }
+
 }

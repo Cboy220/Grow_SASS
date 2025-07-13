@@ -3919,4 +3919,74 @@ class Leads extends Controller {
         //return
         return $stats;
     }
+
+    // Leads AI Analysis Modal
+    public function analyzeAIModal() {
+        $lead_id = request('lead_id');
+        $lead = \App\Models\Lead::findOrFail($lead_id);
+        $payload = ['lead' => $lead];
+        $html = view('pages.leads.components.modals.ai_analysis_modal', $payload)->render();
+        return response()->json([
+            'dom_html' => [[
+                'selector' => '#basicModal',
+                'action' => 'replace',
+                'value' => $html
+            ]],
+            'postrun_functions' => [['value' => 'initLeadAIModalEvents']]
+        ]);
+    }
+
+    // Leads AI Analysis Tab: Analysis
+    public function analyzeAITabAnalysis() {
+        $lead_id = request('lead_id');
+        $lead = \App\Models\Lead::findOrFail($lead_id);
+        $payload = ['lead' => $lead];
+        return new \App\Http\Responses\Leads\AnalyzeAIAnalysisBaseResponse($payload);
+    }
+
+    // Leads AI Analysis Tab: Scoring & Suggestions
+    public function analyzeAITabScoring() {
+        $lead_id = request('lead_id');
+        $lead = \App\Models\Lead::findOrFail($lead_id);
+        $payload = ['lead' => $lead];
+        return new \App\Http\Responses\Leads\AnalyzeAIScoringBaseResponse($payload);
+    }
+
+    // Leads AI Analysis: Run AI for Analysis tab
+    public function analyzeAIAIAnalysis() {
+        $lead_id = request('lead_id');
+        $lead = \App\Models\Lead::findOrFail($lead_id);
+        $aiAnalysisMarkdown = null;
+        $aiAnalysisError = null;
+        try {
+            $aiAnalysisMarkdown = $this->leadrepo->getLeadAIAnalysis($lead_id);
+        } catch (\Exception $e) {
+            $aiAnalysisError = $e->getMessage();
+        }
+        $payload = [
+            'lead' => $lead,
+            'aiAnalysisMarkdown' => $aiAnalysisMarkdown,
+            'aiAnalysisError' => $aiAnalysisError,
+        ];
+        return new \App\Http\Responses\Leads\AnalyzeAIAnalysisAIResponse($payload);
+    }
+
+    // Leads AI Analysis: Run AI for Scoring tab
+    public function analyzeAIAIScoring() {
+        $lead_id = request('lead_id');
+        $lead = \App\Models\Lead::findOrFail($lead_id);
+        $aiAnalysisMarkdown = null;
+        $aiAnalysisError = null;
+        try {
+            $aiAnalysisMarkdown = $this->leadrepo->getLeadAIScoring($lead_id);
+        } catch (\Exception $e) {
+            $aiAnalysisError = $e->getMessage();
+        }
+        $payload = [
+            'lead' => $lead,
+            'aiAnalysisMarkdown' => $aiAnalysisMarkdown,
+            'aiAnalysisError' => $aiAnalysisError,
+        ];
+        return new \App\Http\Responses\Leads\AnalyzeAIScoringAIResponse($payload);
+    }
 }

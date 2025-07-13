@@ -104,6 +104,15 @@ class ProjectAssignedRepository {
         $query->where('projectsassigned_projectid', $id);
         $query->groupBy('users.id');
         $query->orderBy('first_name', 'ASC');
+        $query->addSelect([
+            'projects_assigned.*',
+            'users.id',
+            'users.first_name',
+            'users.last_name',
+            'users.email',
+            'users.avatar_directory',
+            'users.avatar_filename',
+        ]);
         return $query->get();
     }
 

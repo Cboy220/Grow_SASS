@@ -1525,7 +1525,7 @@ if ($("#js-trigger-home-team-wrapper").length) {
 
 
 /**--------------------------------------------------------------------------------------
- * [HOME PAGE - CLIENT] 
+ * [HOME PAGE - TEAM] 
  * @blade : home\team\wrapper.blade.php
  * @description: display dashboard widgets
  * -------------------------------------------------------------------------------------*/
@@ -5944,3 +5944,225 @@ function NXDeleteExpectationEventInit() {
 function NXClientAI() {
   
 }
+
+// Postrun function to convert markdown to HTML for team AI analysis
+function convertTeamAIMarkdown() {
+    $('.ai-analysis-content').each(function() {
+        var $el = $(this);
+        var md = $el.text();
+        var $htmlTarget = $el.siblings('.ai-analysis-html');
+        if (md && typeof marked !== 'undefined' && $htmlTarget.length) {
+            $htmlTarget.html(marked.parse(md));
+        }
+    });
+}
+
+// Postrun function to initialize Team AI modal AI button events only (no tab click handler)
+function initTeamAIModalEvents() {
+    // AI Analysis button click
+    $(document).off('click', '.ai-analyze-btn').on('click', '.ai-analyze-btn', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var url = $btn.data('url');
+        var $result = $btn.closest('.card-body').find('.ai-analysis-result');
+        if (!url || !$result.length) {
+            console.warn('[TeamAI] AI button: URL or .ai-analysis-result not found', url, $result);
+            return;
+        }
+        $result.html('<div class="alert alert-info mb-0"><i class="fas fa-spinner fa-spin"></i> Generating analysis...</div>');
+        $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.dom_html) {
+                    response.dom_html.forEach(function(dom) {
+                        if (dom.selector && dom.action === 'replace') {
+                            $result.replaceWith(dom.value);
+                            // Debug: check if the selector still exists
+                            if ($(dom.selector).length === 0) {
+                                console.warn('[TeamAI] After AI replace, selector missing:', dom.selector);
+                            }
+                        }
+                    });
+                }
+                if (response.postrun_functions && response.postrun_functions.length) {
+                    response.postrun_functions.forEach(function(fn) {
+                        if (typeof window[fn] === 'function') window[fn]();
+                    });
+                }
+                console.log('[TeamAI] AI analysis loaded:', url);
+            },
+            error: function(xhr) {
+                $result.html('<div class="alert alert-danger">AI analysis failed. Please try again.</div>');
+                console.error('[TeamAI] AI AJAX error:', url, xhr);
+            }
+        });
+    });
+    $('#weekly-report-tab').click();
+    // IMPORTANT: Blade views for AI analysis must always include
+    // the correct containers (class="ai-analysis-result")
+    // after replacement, or future AJAX loads will break.
+}
+
+// ... existing code ...
+function convertLeadAIMarkdown() {
+    $('.ai-analysis-content').each(function() {
+        var $el = $(this);
+        var md = $el.text();
+        var $htmlTarget = $el.siblings('.ai-analysis-html');
+        if (md && typeof marked !== 'undefined' && $htmlTarget.length) {
+            $htmlTarget.html(marked.parse(md));
+        }
+    });
+}
+// ... existing code ...
+
+// Ensure convertLeadAIMarkdown runs after every AJAX load of leads AI modal/tab
+$(document).on('shown.bs.modal', '#basicModal', function() {
+    convertLeadAIMarkdown();
+});
+
+// When a tab is loaded via AJAX, also run convertLeadAIMarkdown
+$(document).on('ajaxComplete', function(event, xhr, settings) {
+    // Only run for leads AI analysis modal/tab loads
+    if (settings.url && settings.url.includes('/leads/analyze-ai/')) {
+        convertLeadAIMarkdown();
+    }
+});
+
+// When the AI result is loaded via the Run AI Analysis button, ensure markdown is converted
+$(document).off('click', '.ai-analyze-btn').on('click', '.ai-analyze-btn', function(e) {
+    e.preventDefault();
+    var $btn = $(this);
+    var url = $btn.data('url');
+    var $result = $btn.closest('.card-body').find('.ai-analysis-result');
+    if (!url || !$result.length) {
+        console.warn('[LeadAI] AI button: URL or .ai-analysis-result not found', url, $result);
+        return;
+    }
+    $result.html('<div class="alert alert-info mb-0"><i class="fas fa-spinner fa-spin"></i> Generating analysis...</div>');
+    $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.dom_html) {
+                response.dom_html.forEach(function(dom) {
+                    if (dom.selector && dom.action === 'replace') {
+                        $result.replaceWith(dom.value);
+                    }
+                });
+            }
+            // Always run markdown conversion after result is inserted
+            convertLeadAIMarkdown();
+            if (response.postrun_functions && response.postrun_functions.length) {
+                response.postrun_functions.forEach(function(fn) {
+                    if (typeof window[fn] === 'function') window[fn]();
+                });
+            }
+            console.log('[LeadAI] AI analysis loaded:', url);
+        },
+        error: function(xhr) {
+            $result.html('<div class="alert alert-danger">AI analysis failed. Please try again.</div>');
+            console.error('[LeadAI] AI AJAX error:', url, xhr);
+        }
+    });
+});
+
+$(document).off('click', '.js-ajax-ux-request').on('click', '.js-ajax-ux-request', function(e) {
+    e.stopPropagation();
+    console.log('[DEBUG] .js-ajax-ux-request clicked:', this);
+    // ... existing AJAX/modal logic ...
+});
+
+// ... existing code ...
+$(document).off('click', '.js-ajax-ux-request.js-lead-ai-tab').on('click', '.js-ajax-ux-request.js-lead-ai-tab', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var $tab = $(this);
+    var url = $tab.data('url');
+    if (!url) return;
+    // Set active class
+    $tab.closest('.nav-tabs').find('.nav-link').removeClass('active');
+    $tab.addClass('active');
+    // Show loading spinner
+    $('#analysis-content').html('<div class="p-3 text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+    // AJAX load tab content
+    $.get(url, function(response) {
+        $('#analysis-content').html(response);
+        if (typeof convertLeadAIMarkdown === 'function') {
+            convertLeadAIMarkdown();
+        }
+    }).fail(function(xhr) {
+        $('#analysis-content').html('<div class="alert alert-danger">Failed to load tab content.</div>');
+    });
+});
+// ... existing code ...
+
+// ... existing code ...
+function initLeadAIModalEvents() {
+    // AI Analysis button click
+    $(document).off('click', '.ai-analyze-btn').on('click', '.ai-analyze-btn', function(e) {
+        e.preventDefault();
+        var $btn = $(this);
+        var url = $btn.data('url');
+        var $result = $btn.closest('.card-body').find('.ai-analysis-result');
+        if (!url || !$result.length) {
+            console.warn('[LeadAI] AI button: URL or .ai-analysis-result not found', url, $result);
+            return;
+        }
+        $result.html('<div class="alert alert-info mb-0"><i class="fas fa-spinner fa-spin"></i> Generating analysis...</div>');
+        $.ajax({
+            url: url,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.dom_html) {
+                    response.dom_html.forEach(function(dom) {
+                        if (dom.selector && dom.action === 'replace') {
+                            $result.replaceWith(dom.value);
+                        }
+                    });
+                }
+                // Always run markdown conversion after result is inserted
+                convertLeadAIMarkdown();
+                if (response.postrun_functions && response.postrun_functions.length) {
+                    response.postrun_functions.forEach(function(fn) {
+                        if (typeof window[fn] === 'function') window[fn]();
+                    });
+                }
+                console.log('[LeadAI] AI analysis loaded:', url);
+            },
+            error: function(xhr) {
+                $result.html('<div class="alert alert-danger">AI analysis failed. Please try again.</div>');
+                console.error('[LeadAI] AI AJAX error:', url, xhr);
+            }
+        });
+    });
+    
+    // Auto-load first tab (Analysis) when modal opens
+    var $firstTab = $('.js-ajax-ux-request.js-lead-ai-tab').first();
+    if ($firstTab.length) {
+        // Set active class on first tab
+        $('.js-ajax-ux-request.js-lead-ai-tab').removeClass('active');
+        $firstTab.addClass('active');
+        
+        // Load first tab content
+        var url = $firstTab.data('url');
+        if (url) {
+            $('#analysis-content').html('<div class="p-3 text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+            $.get(url, function(response) {
+                $('#analysis-content').html(response);
+                if (typeof convertLeadAIMarkdown === 'function') {
+                    convertLeadAIMarkdown();
+                }
+            }).fail(function(xhr) {
+                $('#analysis-content').html('<div class="alert alert-danger">Failed to load tab content.</div>');
+            });
+        }
+    }
+    $firstTab.trigger('click');
+
+}
+// ... existing code ...

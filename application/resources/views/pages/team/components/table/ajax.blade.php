@@ -97,6 +97,18 @@
                 data-toggle="tooltip" title="{{ cleanLang(__('lang.actions_not_available')) }}"><i
                     class="sl-icon-lock"></i></span>
             @endif
+            <!--AI Analysis-->
+            <button type="button" title="AI Analysis"
+                class="data-toggle-action-tooltip btn btn-outline-info btn-circle btn-sm js-ajax-ux-request"
+                data-toggle="modal"
+                data-target="#basicModal"
+                data-url="{{ url('/team/analyze-ai/modal?team_id=' . $team->id) }}"
+                data-ajax-type="GET"
+                data-loading-target="basicModalContent"
+                data-loading-class="loading">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </button>
+            <!--/AI Analysis-->
         </span>
         <!--action buttons-->
     </td>

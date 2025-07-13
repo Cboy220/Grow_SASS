@@ -16,9 +16,19 @@
     <td class="projects_col_id {{ config('table.tableconfig_column_1') }} tableconfig_column_1">
         <a href="{{ _url('/projects/'.$project->project_id) }}">{{ $project->project_id }}</label></a>
     </td>
+    <!--tableconfig_column_23 [project_id]-->
+    <td class="projects_analyze_ai {{ config('table.tableconfig_column_23') }} tableconfig_column_23">
+        <a href="javascript:void(0)"
+           class="ai-analysis-btn edit-add-modal-button js-ajax-ux-request reset-target-modal-form"
+           data-toggle="modal" data-target="#basicModal"
+           data-url="{{ _url('/projects/'.$project->project_id. "/analyze_ai") }}" data-loading-target="basicModal"
+           data-placement="top" title="AI Project Analysis">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </a>
+    </td>
     <!--tableconfig_column_2 [project_title]-->
     <td class="projects_col_project {{ config('table.tableconfig_column_2') }} tableconfig_column_2">
-        <a href="{{ _url('/projects/'.$project->project_id) }}">{{ str_limit($project->project_title ??'---', 20) }}<a />
+        <a href="{{ _url('/projects/'.$project->project_id) }}">{{ str_limit($project->project_title ??'---', 20) }}</a>
             <!--automation-->
             @if(auth()->user()->is_team && $project->project_automation_status == 'enabled')
             <span class="sl-icon-energy text-warning p-l-5" data-toggle="tooltip"
@@ -279,3 +289,21 @@
 </tr>
 @endforeach
 <!--each row-->
+<style>
+.ai-analysis-btn {
+    background: none !important;
+    border: none !important;
+    color: #007bff;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 2px 6px;
+    font-size: 1.1em;
+    transition: color 0.2s, background 0.2s;
+}
+.ai-analysis-btn:hover, .ai-analysis-btn:focus {
+    color: #fff;
+    background: #007bff !important;
+    border-radius: 4px;
+    text-decoration: none;
+}
+</style>

@@ -26,6 +26,11 @@
                                     data-url="{{ urlResource('/projects?action=sort&orderby=project_id&sortorder=asc') }}">{{ cleanLang(__('lang.id')) }}<span
                                         class="sorting-icons"><i class="ti-arrows-vertical"></i></span></a>
                             </th>
+                            <!--tableconfig_column_23 [project_id]-->
+                            <th class="projects_col_id {{ config('table.tableconfig_column_23') }} tableconfig_column_23">
+                                <a class="js-ajax-ux-request js-list-sorting" id="sort_analyze_project"
+                                    href="javascript:void(0)">Analyze AI</a>
+                            </th>
                             <!--tableconfig_column_2 [project_title]-->
                             <th
                                 class="projects_col_project {{ config('table.tableconfig_column_2') }} tableconfig_column_2">

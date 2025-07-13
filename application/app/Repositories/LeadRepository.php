@@ -630,4 +630,100 @@ class LeadRepository {
 
     }
 
+    // Generate prompt for Analysis tab
+    public function generateLeadAnalysisPrompt($leadId) {
+        $lead = \App\Models\Lead::with(['assigned', 'comments', 'attachments', 'category', 'leadstatus'])->findOrFail($leadId);
+        $conversionRate = $this->calculateLeadConversionRate();
+        $avgResponseTime = $this->calculateLeadAvgResponseTime($leadId);
+        $prompt = "You are a sales analyst AI. Analyze the following lead and provide data-driven insights.\n";
+        $prompt .= "Lead Name: {$lead->getFullNameAttribute()}\n";
+        $prompt .= "Title: {$lead->lead_title}\n";
+        $prompt .= "Company: {$lead->lead_company_name}\n";
+        $prompt .= "Status: {$lead->leadstatus->leadstatus_title}\n";
+        $prompt .= "Category: {$lead->category->category_name}\n";
+        $prompt .= "Value: {$lead->lead_value}\n";
+        $prompt .= "Source: {$lead->lead_source}\n";
+        $prompt .= "Assigned: " . $lead->assigned->pluck('first_name')->implode(', ') . "\n";
+        $prompt .= "Conversion Rate: {$conversionRate}%\n";
+        $prompt .= "Average Response Time: {$avgResponseTime} hours\n";
+        $prompt .= "Description: {$lead->lead_description}\n";
+        $prompt .= "Recent Comments: ";
+        foreach ($lead->comments->take(3) as $comment) {
+            $prompt .= "- {$comment->comment_text}\n";
+        }
+        $prompt .= "\nProvide insights on conversion likelihood, bottlenecks, and actionable suggestions.";
+        return $prompt;
+    }
+
+    // Generate prompt for Scoring & Suggestions tab
+    public function generateLeadScoringPrompt($leadId) {
+        $lead = \App\Models\Lead::with(['assigned', 'comments', 'attachments', 'category', 'leadstatus'])->findOrFail($leadId);
+        $prompt = "You are a sales coach AI. Score the following lead and provide recommendations to win the lead.\n";
+        $prompt .= "Lead Name: {$lead->getFullNameAttribute()}\n";
+        $prompt .= "Title: {$lead->lead_title}\n";
+        $prompt .= "Company: {$lead->lead_company_name}\n";
+        $prompt .= "Status: {$lead->leadstatus->leadstatus_title}\n";
+        $prompt .= "Category: {$lead->category->category_name}\n";
+        $prompt .= "Value: {$lead->lead_value}\n";
+        $prompt .= "Source: {$lead->lead_source}\n";
+        $prompt .= "Assigned: " . $lead->assigned->pluck('first_name')->implode(', ') . "\n";
+        $prompt .= "Description: {$lead->lead_description}\n";
+        $prompt .= "Recent Comments: ";
+        foreach ($lead->comments->take(3) as $comment) {
+            $prompt .= "- {$comment->comment_text}\n";
+        }
+        $prompt .= "\nScore the lead (0-100), describe the ideal profile, and list next best actions to win the lead.";
+        return $prompt;
+    }
+
+    // Calculate conversion rate (dummy example)
+    private function calculateLeadConversionRate() {
+        $total = \App\Models\Lead::count();
+        $converted = \App\Models\Lead::where('lead_converted', 'yes')->count();
+        return $total > 0 ? round(($converted / $total) * 100, 1) : 0;
+    }
+
+    // Calculate average response time (dummy example)
+    private function calculateLeadAvgResponseTime($leadId) {
+        // Placeholder: In real app, calculate from events/comments timestamps
+        return 12; // hours
+    }
+
+    // Call OpenAI for Analysis tab
+    public function getLeadAIAnalysis($leadId) {
+        $prompt = $this->generateLeadAnalysisPrompt($leadId);
+        try {
+            $response = \OpenAI\Laravel\Facades\OpenAI::chat()->create([
+                'model' => config('openai.model', 'gpt-3.5-turbo'),
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are a helpful sales analyst AI.'],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'max_tokens' => 800,
+                'temperature' => 0.7,
+            ]);
+            return $response['choices'][0]['message']['content'] ?? '';
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+    }
+
+    // Call OpenAI for Scoring & Suggestions tab
+    public function getLeadAIScoring($leadId) {
+        $prompt = $this->generateLeadScoringPrompt($leadId);
+        try {
+            $response = \OpenAI\Laravel\Facades\OpenAI::chat()->create([
+                'model' => config('openai.model', 'gpt-3.5-turbo'),
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are a helpful sales coach AI.'],
+                    ['role' => 'user', 'content' => $prompt],
+                ],
+                'max_tokens' => 800,
+                'temperature' => 0.7,
+            ]);
+            return $response['choices'][0]['message']['content'] ?? '';
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+    }
 }

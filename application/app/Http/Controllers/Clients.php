@@ -31,6 +31,7 @@ use App\Http\Responses\Clients\UpdateResponse;
 use App\Repositories\AttachmentRepository;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ClientRepository;
+use App\Repositories\ClientAIRepository;
 use App\Repositories\CustomFieldsRepository;
 use App\Repositories\DestroyRepository;
 use App\Repositories\PinnedRepository;
@@ -67,13 +68,19 @@ class Clients extends Controller {
      * The feedback repository instance.
      */
     protected $feedbackrepo;
+    
+    /**
+     * The client ai repository instance.
+     */
+    protected $clientAIrepo;
 
     public function __construct(
         UserRepository $userrepo, 
         ClientRepository $clientrepo, 
         TagRepository $tagrepo, 
         CustomFieldsRepository $customrepo,
-        FeedbackRepository $feedbackrepo
+        FeedbackRepository $feedbackrepo,
+        ClientAIRepository $clientAIrepo,
         ) {
 
         //parent
@@ -118,7 +125,7 @@ class Clients extends Controller {
         $this->tagrepo = $tagrepo;
         $this->customrepo = $customrepo;
         $this->feedbackrepo = $feedbackrepo;
-
+        $this->clientAIrepo = $clientAIrepo;
     }
 
     /**
@@ -1024,5 +1031,245 @@ class Clients extends Controller {
         }
         //return
         return $stats;
+    }
+
+    public function analyzeAIFeedback($clientId) {
+        $client = $this->clientrepo->search($clientId)->first();
+        $feedbackData = $this->clientAIrepo->getRecentFeedbackStatus($clientId);
+        $latestFeedbacks = $this->clientAIrepo->getLatestFeedbackWithMarks($clientId);
+        return new \App\Http\Responses\Clients\AnalyzeAIFeedbackResponse([
+            'client' => $client,
+            'feedbackData' => $feedbackData,
+            'latestFeedbacks' => $latestFeedbacks,
+        ]);
+    }
+    public function analyzeAIExpectations($clientId) {
+        $client = $this->clientrepo->search($clientId)->first();
+        $expectationData = $this->clientAIrepo->getRecentExpectationProgress($clientId);
+        return new \App\Http\Responses\Clients\AnalyzeAIExpectationsResponse([
+            'client' => $client,
+            'expectationData' => $expectationData,
+        ]);
+    }
+    public function analyzeAIProjects($clientId) {
+        $client = $this->clientrepo->search($clientId)->first();
+        $projectData = $this->clientAIrepo->getProjectOverdueOrUpcoming($clientId);
+        return new \App\Http\Responses\Clients\AnalyzeAIProjectsResponse([
+            'client' => $client,
+            'projectData' => $projectData,
+        ]);
+    }
+    public function analyzeAIComments($clientId) {
+        $client = $this->clientrepo->search($clientId)->first();
+        $commentsData = $this->clientAIrepo->getUnansweredClientComments($clientId);
+        return new \App\Http\Responses\Clients\AnalyzeAICommentsResponse([
+            'client' => $client,
+            'commentsData' => $commentsData,
+        ]);
+    }
+    public function analyzeAIFeedbackOnly($clientId)
+    {
+        $client = $this->clientrepo->search($clientId)->first();
+        $aiPrompt = $this->clientAIrepo->generateFeedbackAnalysisPrompt($clientId);
+        return new \App\Http\Responses\Clients\AnalyzeAIFeedbackOnlyResponse([
+            'client' => $client,
+            'aiPrompt' => $aiPrompt,
+        ]);
+    }
+
+    public function analyzeAIModal($clientId)
+    {
+        $client = $this->clientrepo->search($clientId)->first();
+        return new \App\Http\Responses\Clients\AnalyzeAIModalResponse([
+            'client' => $client,
+        ]);
+    }
+
+    /**
+     * Generate AI analysis for feedback
+     */
+    public function generateAIFeedbackAnalysis($clientId)
+    {
+        try {
+            $client = $this->clientrepo->search($clientId)->first();
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found']);
+            }
+
+            $prompt = $this->clientAIrepo->generateFeedbackAnalysisPrompt($clientId);
+            
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => 'You are an expert business analyst AI. Analyze client feedback and provide actionable insights in a clear, professional format.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ];
+
+            $aiResponse = $this->callOpenAI($messages);
+            
+            return response()->json([
+                'success' => true,
+                'analysis' => $aiResponse,
+                'prompt' => $prompt
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI analysis failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Generate AI analysis for expectations
+     */
+    public function generateAIExpectationsAnalysis($clientId)
+    {
+        try {
+            $client = $this->clientrepo->search($clientId)->first();
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found']);
+            }
+
+            $prompt = $this->clientAIrepo->generateExpectationsAnalysisPrompt($clientId);
+            
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => 'You are an expert business analyst AI. Analyze client expectations and provide actionable insights in a clear, professional format.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ];
+
+            $aiResponse = $this->callOpenAI($messages);
+            
+            return response()->json([
+                'success' => true,
+                'analysis' => $aiResponse,
+                'prompt' => $prompt
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI analysis failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Generate AI analysis for projects
+     */
+    public function generateAIProjectsAnalysis($clientId)
+    {
+        try {
+            $client = $this->clientrepo->search($clientId)->first();
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found']);
+            }
+
+            $prompt = $this->clientAIrepo->generateProjectsAnalysisPrompt($clientId);
+            
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => 'You are an expert business analyst AI. Analyze client projects and provide actionable insights in a clear, professional format.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ];
+
+            $aiResponse = $this->callOpenAI($messages);
+            
+            return response()->json([
+                'success' => true,
+                'analysis' => $aiResponse,
+                'prompt' => $prompt
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI analysis failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Generate AI analysis for comments
+     */
+    public function generateAICommentsAnalysis($clientId)
+    {
+        try {
+            $client = $this->clientrepo->search($clientId)->first();
+            if (!$client) {
+                return response()->json(['success' => false, 'message' => 'Client not found']);
+            }
+
+            $prompt = $this->clientAIrepo->generateCommentsAnalysisPrompt($clientId);
+            
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => 'You are an expert business analyst AI. Analyze client comments and provide actionable insights in a clear, professional format.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ];
+
+            $aiResponse = $this->callOpenAI($messages);
+            
+            return response()->json([
+                'success' => true,
+                'analysis' => $aiResponse,
+                'prompt' => $prompt
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI analysis failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Call OpenAI API
+     */
+    private function callOpenAI($messages)
+    {
+        try {
+            $response = \OpenAI\Laravel\Facades\OpenAI::chat()->create([
+                'model' => config('openai.model', 'gpt-3.5-turbo'),
+                'messages' => $messages,
+                'max_tokens' => 1000,
+                'temperature' => 0.7
+            ]);
+
+            return $response['choices'][0]['message']['content'];
+
+        } catch (\OpenAI\Exceptions\RateLimitException $e) {
+            throw new \Exception('Rate limit exceeded. Please try again later.');
+        } catch (\OpenAI\Exceptions\AuthenticationException $e) {
+            throw new \Exception('AI service authentication failed.');
+        } catch (\OpenAI\Exceptions\ErrorException $e) {
+            throw new \Exception('AI service error: ' . $e->getMessage());
+        } catch (\OpenAI\Exceptions\TransporterException $e) {
+            throw new \Exception('Connection error. Please check your internet connection.');
+        } catch (\Exception $e) {
+            throw new \Exception('AI analysis failed: ' . $e->getMessage());
+        }
     }
 }

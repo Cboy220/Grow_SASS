@@ -304,8 +304,18 @@
             </div>
         </span>
         @endif
-        <!--more button-->
-
+        <!--AI Analysis-->
+        <button type="button" title="AI Analysis"
+            class="data-toggle-action-tooltip btn btn-outline-info btn-circle btn-sm js-ajax-ux-request"
+            data-toggle="modal"
+            data-target="#basicModal"
+            data-url="{{ url('/leads/analyze-ai/modal?lead_id=' . $lead->lead_id) }}"
+            data-ajax-type="GET"
+            data-loading-target="basicModalContent"
+            data-loading-class="loading">
+            <i class="fas fa-robot"></i>
+        </button>
+        <!--/AI Analysis-->
         <!--pin-->
         <span class="list-table-action">
             <a href="javascript:void(0);" title="{{ cleanLang(__('lang.pinning')) }}"

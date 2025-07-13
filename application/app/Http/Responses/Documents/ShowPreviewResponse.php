@@ -63,7 +63,7 @@ class ShowPreviewResponse implements Responsable {
             $final_document = str_replace('{proposal_date}', runtimeDate($document->doc_date_start), $final_document);
             $final_document = str_replace('{expiry_date}', runtimeDate($document->doc_date_end), $final_document);
             $final_document = str_replace('{prepared_by_name}', $document->first_name . ' ' . $document->last_name, $final_document);
-            $final_document = str_replace('{pricing_total}', runtimeMoneyFormat($bill->bill_final_amount), $final_document);
+            $final_document = str_replace('{pricing_total}', runtimeMoneyFormat(isset($bill) ? $bill->bill_final_amount : 0), $final_document);
             $final_document = str_replace('{todays_date}', runtimeDate(now()), $final_document);
         }
 
@@ -75,7 +75,7 @@ class ShowPreviewResponse implements Responsable {
             $final_document = str_replace('{contract_date}', runtimeDate($document->doc_date_start), $final_document);
             $final_document = str_replace('{contract_end_date}', runtimeDate($document->doc_date_end), $final_document);
             $final_document = str_replace('{prepared_by_name}', $document->first_name . ' ' . $document->last_name, $final_document);
-            $final_document = str_replace('{pricing_table_total}', runtimeMoneyFormat($bill->bill_final_amount), $final_document);
+            $final_document = str_replace('{pricing_table_total}', runtimeMoneyFormat(isset($bill) ? $bill->bill_final_amount : 0), $final_document);
             $final_document = str_replace('{contract_value}', runtimeMoneyFormat($document->doc_value), $final_document);
             $final_document = str_replace('{todays_date}', runtimeDate(now()), $final_document);
 

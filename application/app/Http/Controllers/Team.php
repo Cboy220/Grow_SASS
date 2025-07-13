@@ -19,6 +19,7 @@ use App\Http\Responses\Team\UpdateResponse;
 use App\Repositories\ProjectRepository;
 use App\Repositories\RoleRepository;
 use App\Repositories\UserRepository;
+use App\Repositories\TeamRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
@@ -41,10 +42,16 @@ class Team extends Controller {
      */
     protected $projectrepo;
 
+    /**
+     * The team repository instance.
+     */
+    protected $teamrepo;
+
     public function __construct(
         RoleRepository $roles,
         UserRepository $userrepo,
-        ProjectRepository $projectrepo) {
+        ProjectRepository $projectrepo,
+        TeamRepository $teamrepo) {
 
         //parent
         parent::__construct();
@@ -73,6 +80,7 @@ class Team extends Controller {
         $this->roles = $roles;
         $this->userrepo = $userrepo;
         $this->projectrepo = $projectrepo;
+        $this->teamrepo = $teamrepo;
     }
 
     /**
@@ -360,6 +368,212 @@ class Team extends Controller {
 
         //generate a response
         return new CommonResponse($payload);
+    }
+
+    /**
+     * AI Analysis - Team Weekly Report Tab
+     * @return \Illuminate\Http\Response
+     */
+    public function analyzeAIWeeklyReport()
+    {
+        try {
+            $teamId = request('team_id');
+            if ($teamId) {
+                $prompt = $this->teamrepo->generateMemberWeeklyReportPrompt($teamId);
+            } else {
+                $prompt = $this->userrepo->generateTeamWeeklyReportPrompt();
+            }
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => 'You are an expert team performance analyst AI. Analyze the following weekly report and general alerts, and provide actionable insights in a clear, professional format.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ];
+            $aiResponse = $this->callOpenAI($messages);
+            $payload = [
+                'aiPrompt' => $prompt,
+                'aiAnalysis' => $aiResponse,
+            ];
+            return new \App\Http\Responses\Team\AnalyzeAIWeeklyReportAIResponse($payload);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI analysis failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Show the Team AI Analysis modal (AJAX)
+     */
+    public function analyzeAIModal()
+    {
+        $teamId = request('team_id');
+        $team = null;
+        if ($teamId) {
+            $team = \App\Models\User::where('type', 'team')->where('id', $teamId)->first();
+        }
+        $payload = [
+            'team' => $team,
+        ];
+        return new \App\Http\Responses\Team\AnalyzeAIModalResponse($payload);
+    }
+
+    /**
+     * AI Analysis - Team General Alerts Tab
+     * @return \Illuminate\Http\Response
+     */
+    public function analyzeAIGeneralAlerts()
+    {
+        try {
+            $teamId = request('team_id');
+            if ($teamId) {
+                // You can customize the prompt logic for alerts here
+                $prompt = $this->teamrepo->generateMemberGeneralAlertsPrompt($teamId);
+            } else {
+                $prompt = $this->userrepo->generateTeamGeneralAlertsPrompt();
+            }
+            $messages = [
+                [
+                    'role' => 'system',
+                    'content' => 'You are an expert team performance analyst AI. Analyze the following general alerts and bottlenecks, and provide actionable insights in a clear, professional format.'
+                ],
+                [
+                    'role' => 'user',
+                    'content' => $prompt
+                ]
+            ];
+            $aiResponse = $this->callOpenAI($messages);
+            $payload = [
+                'aiPrompt' => $prompt,
+                'aiAnalysis' => $aiResponse,
+            ];
+            return new \App\Http\Responses\Team\AnalyzeAIGeneralAlertsAIResponse($payload);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'AI analysis failed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Base Data - Team Weekly Report Tab (non-AI)
+     */
+    public function baseWeeklyReport()
+    {
+        $teamId = request('team_id');
+        $data = $this->teamrepo->getMemberWeeklyReportData($teamId);
+        if (!$data) {
+            $html = '<div class="alert alert-danger">Team member not found.</div>';
+            return new \App\Http\Responses\Team\AnalyzeAIWeeklyReportBaseResponse(['html' => $html]);
+        }
+        return new \App\Http\Responses\Team\AnalyzeAIWeeklyReportBaseResponse($data);
+    }
+
+    /**
+     * AI Analysis - Team Weekly Report Tab
+     */
+    public function aiWeeklyReport()
+    {
+        $teamId = request('team_id');
+        $data = $this->teamrepo->getWeeklyReportAIAnalysis($teamId);
+        $html = view('pages.team.views.modals.tabs.weekly_report_analysis_ai', $data)->render();
+        return response()->json([
+            'dom_html' => [[
+                'selector' => '.ai-analysis-result',
+                'action' => 'replace',
+                'value' => $html
+            ]],
+            'postrun_functions' => ['convertTeamAIMarkdown']
+        ]);
+    }
+
+    /**
+     * Base Data - Team General Alerts Tab (non-AI)
+     */
+    public function baseGeneralAlerts()
+    {
+        $teamId = request('team_id');
+        $data = $this->teamrepo->getMemberGeneralAlertsData($teamId);
+        if (!$data) {
+            return new \App\Http\Responses\Team\AnalyzeAIGeneralAlertsBaseResponse([ 'html' => '<div class="alert alert-danger">Team member not found.</div>' ]);
+        }
+        return new \App\Http\Responses\Team\AnalyzeAIGeneralAlertsBaseResponse($data);
+    }
+
+    /**
+     * AI Analysis - Team General Alerts Tab
+     */
+    public function aiGeneralAlerts()
+    {
+        $teamId = request('team_id');
+        $data = $this->teamrepo->getGeneralAlertsAIAnalysis($teamId);
+        $html = view('pages.team.views.modals.tabs.general_alerts_analysis_ai', $data)->render();
+        return response()->json([
+            'dom_html' => [[
+                'selector' => '.ai-analysis-result',
+                'action' => 'replace',
+                'value' => $html
+            ]],
+            'postrun_functions' => ['convertTeamAIMarkdown']
+        ]);
+    }
+
+    /**
+     * Base Data - Team Productivity Tab (non-AI)
+     */
+    public function baseProductivity()
+    {
+        $teamId = request('team_id');
+        $data = $this->teamrepo->getMemberProductivityData($teamId);
+        if (!$data) {
+            $html = '<div class="alert alert-danger">Team member not found.</div>';
+            return new \App\Http\Responses\Team\AnalyzeAIProductivityBaseResponse(['html' => $html]);
+        }
+        return new \App\Http\Responses\Team\AnalyzeAIProductivityBaseResponse($data);
+    }
+
+    /**
+     * AI Analysis - Team Productivity Tab
+     */
+    public function aiProductivity()
+    {
+        $teamId = request('team_id');
+        $data = $this->teamrepo->getProductivityAIAnalysis($teamId);
+        return new \App\Http\Responses\Team\AnalyzeAIProductivityAIResponse($data);
+    }
+
+    /**
+     * Call OpenAI API
+     */
+    private function callOpenAI($messages)
+    {
+        try {
+            $response = \OpenAI\Laravel\Facades\OpenAI::chat()->create([
+                'model' => config('openai.model', 'gpt-3.5-turbo'),
+                'messages' => $messages,
+                'max_tokens' => 1000,
+                'temperature' => 0.7
+            ]);
+
+            return $response['choices'][0]['message']['content'];
+
+        } catch (\OpenAI\Exceptions\RateLimitException $e) {
+            throw new \Exception('Rate limit exceeded. Please try again later.');
+        } catch (\OpenAI\Exceptions\AuthenticationException $e) {
+            throw new \Exception('AI service authentication failed.');
+        } catch (\OpenAI\Exceptions\ErrorException $e) {
+            throw new \Exception('AI service error: ' . $e->getMessage());
+        } catch (\OpenAI\Exceptions\TransporterException $e) {
+            throw new \Exception('Connection error. Please check your internet connection.');
+        } catch (\Exception $e) {
+            throw new \Exception('AI analysis failed: ' . $e->getMessage());
+        }
     }
 
     /**

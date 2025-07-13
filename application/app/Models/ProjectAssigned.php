@@ -14,9 +14,14 @@ class ProjectAssigned extends Model {
      * @UPDATED_AT string - updated date column
      */
     protected $table = 'projects_assigned';
-    protected $primaryKey = 'projectsassigned_id';
+    
     protected $dateFormat = 'Y-m-d H:i:s';
     protected $guarded = ['projectsassigned_id'];
     const CREATED_AT = 'projectsassigned_created';
     const UPDATED_AT = 'projectsassigned_updated';
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'projectsassigned_userid', 'id');
+    }
 }

@@ -291,6 +291,17 @@
                     </label>
                 </div>
 
+                <!--tableconfig_column_23 [project_status]-->
+                <div class="p-b-5">
+                    <label class="custom-control custom-checkbox table-config-checkbox-container">
+                        <input name="tableconfig_column_23" type="checkbox"
+                            class="custom-control-input table-config-checkbox cursor-pointer"
+                            {{ runtimePrechecked(config('table.tableconfig_column_23')) }}>
+                        <span class="custom-control-indicator"></span>
+                        <span class="custom-control-description">Analyze AI</span>
+                    </label>
+                </div>
+
 
 
                 <!--table name-->

@@ -16,15 +16,18 @@ class ClientAITestSeeder extends Seeder
         for ($i = 0; $i < 10; $i++) {
             // Create client
             $clientId = DB::table('clients')->insertGetId([
-                'client_company_name' => $faker->company,
-                'industry' => $faker->word,
-                'client_status' => $faker->randomElement(['active', 'inactive']),
+                'client_importid' => $faker->uuid,
                 'client_created' => $faker->dateTimeBetween('-2 years', 'now'),
+                'client_updated' => $faker->dateTimeBetween('-2 years', 'now'),
+                'client_creatorid' => 1, // Default user
+                'client_created_from_leadid' => 0,
+                'client_categoryid' => 1,
+                'client_company_name' => $faker->company,
                 'client_description' => $faker->sentence,
-                'client_website' => $faker->url,
                 'client_phone' => $faker->phoneNumber,
+                'client_website' => $faker->url,
                 'client_vat' => strtoupper($faker->bothify('??########')),
-                'client_categoryid' => 1, // You may want to seed categories too
+                'client_status' => $faker->randomElement(['active', 'suspended']),
             ]);
 
             // Create users (contacts)
@@ -36,6 +39,8 @@ class ClientAITestSeeder extends Seeder
                     'email' => $faker->unique()->safeEmail,
                     'role_id' => 2,
                     'type' => 'client',
+                    'password' => bcrypt('password'),
+                    'status' => 'active',
                 ]);
             }
 
@@ -43,10 +48,12 @@ class ClientAITestSeeder extends Seeder
             for ($j = 0; $j < 2; $j++) {
                 $projectId = DB::table('projects')->insertGetId([
                     'project_clientid' => $clientId,
+                    'project_creatorid' => 1,
+                    'project_categoryid' => 1,
                     'project_title' => $faker->catchPhrase,
-                    'project_status' => $faker->randomElement(['active', 'completed']),
                     'project_created' => $faker->dateTimeBetween('-2 years', 'now'),
-                    'project_deadline' => $faker->dateTimeBetween('now', '+1 year'),
+                    'project_updated' => $faker->dateTimeBetween('-2 years', 'now'),
+                    'project_status' => $faker->randomElement(['not_started', 'in_progress', 'on_hold', 'cancelled', 'completed']),
                 ]);
             }
 

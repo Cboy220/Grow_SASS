@@ -14,6 +14,13 @@
                                         class="sorting-icons"><i class="ti-arrows-vertical"></i></span></a>
                             </th>
 
+                            <!--tableconfig_column_29 [AI Analysis Button]-->
+                            <?php if(config('table.tableconfig_column_29')): ?>
+                            <th class="col_ai_analysis <?php echo e(config('table.tableconfig_column_29')); ?> tableconfig_column_29" title="AI Analysis">
+                                <i class="fa-solid fa-wand-magic-sparkles" data-toggle="tooltip" data-placement="top" title="AI Analysis"></i>
+                            </th>
+                            <?php endif; ?>
+
                             <!--tableconfig_column_2 [client_company_name]-->
                             <th
                                 class="col_client_company_name <?php echo e(config('table.tableconfig_column_2')); ?> tableconfig_column_2">
